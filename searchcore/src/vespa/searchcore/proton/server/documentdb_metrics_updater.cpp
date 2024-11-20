@@ -17,6 +17,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
+#include <vespa/searchlib/diskindex/field_index.h>
 #include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -26,6 +27,7 @@ LOG_SETUP(".proton.server.documentdb_metrics_updater");
 
 using search::LidUsageStats;
 using search::attribute::ImportedAttributeVector;
+using search::diskindex::FieldIndex;
 using vespalib::CacheStats;
 using vespalib::MemoryUsage;
 
@@ -91,6 +93,7 @@ updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableSta
         disk_io.merge(field.second.cache_disk_io_stats());
     }
     indexMetrics.disk_io.update(disk_io, "index");
+    FieldIndex::debug_report();
 }
 
 struct TempAttributeMetric

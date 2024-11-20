@@ -8,6 +8,7 @@
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <cassert>
+#include <cinttypes>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -33,6 +34,13 @@ const std::vector<std::string> field_file_names{
 }
 
 std::atomic<uint64_t> FieldIndex::_file_id_source(0);
+std::atomic<uint64_t> FieldIndex::_read_postings_cnt;
+std::atomic<uint64_t> FieldIndex::_read_uncached_postings_cnt;
+std::atomic<uint64_t> FieldIndex::_cache_lookup_cnt;
+std::atomic<uint64_t> FieldIndex::_cache_hit_cnt;
+std::atomic<uint64_t> FieldIndex::_cache_miss_cnt;
+std::atomic<uint64_t> FieldIndex::_cache_backend_cnt;
+
 
 FieldIndex::LockedCacheDiskIoStats::LockedCacheDiskIoStats() noexcept
     : _stats(),
@@ -175,6 +183,7 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
 PostingListHandle
 FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_result, bool trim) const
 {
+    ++_read_uncached_postings_cnt;
     auto handle = _posting_file->read_posting_list(lookup_result);
     assert(handle._read_bytes != 0);
     _cache_disk_io_stats->add_uncached_read_operation(handle._read_bytes);
@@ -188,6 +197,7 @@ PostingListHandle
 FieldIndex::read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const
 {
     ctx.cache_miss = true;
+    ++_cache_backend_cnt;
     DictionaryLookupResult lookup_result;
     lookup_result.bitOffset = key.bit_offset;
     lookup_result.counts._bitLength = key.bit_length;
@@ -197,6 +207,7 @@ FieldIndex::read(const IPostingListCache::Key& key, IPostingListCache::Context& 
 PostingListHandle
 FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
 {
+    ++_read_postings_cnt;
     auto file = _posting_file.get();
     if (file == nullptr || lookup_result.counts._bitLength == 0) {
         return {};
@@ -209,10 +220,14 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
     key.bit_offset = lookup_result.bitOffset;
     key.bit_length = lookup_result.counts._bitLength;
     IPostingListCache::Context ctx(this);
+    ++_cache_lookup_cnt;
     auto result = _posting_list_cache->read(key, ctx);
     if (!ctx.cache_miss) {
+        ++_cache_hit_cnt;
         assert(result._read_bytes != 0);
         _cache_disk_io_stats->add_cached_read_operation(result._read_bytes);
+    } else {
+        ++_cache_miss_cnt;
     }
     return result;
 }
@@ -283,6 +298,20 @@ FieldIndex::get_stats() const
 {
     auto cache_disk_io_stats = _cache_disk_io_stats->read_and_clear();
     return FieldIndexStats().size_on_disk(_size_on_disk).cache_disk_io_stats(cache_disk_io_stats);
+}
+
+void
+FieldIndex::debug_report()
+{
+    LOG(info, "Debug update metrics field_index read_postings=%" PRIu64
+    ", read_uncached_postings=%" PRIu64
+    ", cache_lookup=%" PRIu64
+    ", cache_hit=%" PRIu64
+    ", cache miss=%" PRIu64
+    ", cache_backend=%" PRIu64,
+    _read_postings_cnt.load(), _read_uncached_postings_cnt.load(),
+    _cache_lookup_cnt.load(), _cache_hit_cnt.load(), _cache_miss_cnt.load(),
+    _cache_backend_cnt.load());
 }
 
 }

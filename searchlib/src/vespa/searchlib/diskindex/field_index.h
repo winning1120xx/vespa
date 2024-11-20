@@ -59,6 +59,12 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     bool                               _bitvector_cache_enabled;
     static std::atomic<uint64_t> _file_id_source;
     uint32_t _field_id;
+    static std::atomic<uint64_t> _read_postings_cnt;
+    static std::atomic<uint64_t> _read_uncached_postings_cnt;
+    static std::atomic<uint64_t> _cache_lookup_cnt;
+    static std::atomic<uint64_t> _cache_hit_cnt;
+    static std::atomic<uint64_t> _cache_miss_cnt;
+    static std::atomic<uint64_t> _cache_backend_cnt;
 
     static uint64_t get_next_file_id() noexcept { return _file_id_source.fetch_add(1) + 1; }
 public:
@@ -89,6 +95,7 @@ public:
     FieldIndexStats get_stats() const;
     uint32_t get_field_id() const noexcept { return _field_id; }
     bool is_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
+    static void debug_report();
 };
 
 }
