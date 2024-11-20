@@ -2,6 +2,10 @@
 
 #include "disk_io_metrics.h"
 #include <vespa/searchlib/util/cache_disk_io_stats.h>
+#include <sstream>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.disk_io_metrics");
 
 using search::CacheDiskIoStats;
 using search::DiskIoStats;
@@ -10,7 +14,10 @@ namespace proton {
 
 namespace {
 
-void update_helper(metrics::LongValueMetric &metric, const DiskIoStats &stats) {
+void update_helper(metrics::LongValueMetric &metric, const DiskIoStats &stats, const std::string& label) {
+    std::ostringstream os;
+    os << stats;
+    LOG(info, "Debug update metrics disk io %s: %s", label.c_str(), os.str().c_str());
     metric.addTotalValueBatch(stats.read_bytes_total(), stats.read_operations(),
                               stats.read_bytes_min(), stats.read_bytes_max());
 }
@@ -27,10 +34,10 @@ DiskIoMetrics::SearchMetrics::SearchMetrics(metrics::MetricSet* parent)
 DiskIoMetrics::SearchMetrics::~SearchMetrics() = default;
 
 void
-DiskIoMetrics::SearchMetrics::update(const CacheDiskIoStats& cache_disk_io_stats)
+DiskIoMetrics::SearchMetrics::update(const CacheDiskIoStats& cache_disk_io_stats, const std::string& label)
 {
-    update_helper(_read_bytes, cache_disk_io_stats.read());
-    update_helper(_cached_read_bytes, cache_disk_io_stats.cached_read());
+    update_helper(_read_bytes, cache_disk_io_stats.read(), label + ".read_bytes");
+    update_helper(_cached_read_bytes, cache_disk_io_stats.cached_read(), label + ".cached_read_bytes");
 }
 
 DiskIoMetrics::DiskIoMetrics(metrics::MetricSet* parent)

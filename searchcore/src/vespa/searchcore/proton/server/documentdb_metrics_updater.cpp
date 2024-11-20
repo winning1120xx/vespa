@@ -86,11 +86,11 @@ updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableSta
         if (entry) {
             entry->memoryUsage.update(field.second.memory_usage());
             entry->disk_usage.set(field.second.size_on_disk());
-            entry->update_disk_io(field.second.cache_disk_io_stats());
+            entry->update_disk_io(field.second.cache_disk_io_stats(), "field_" + field.first);
         }
         disk_io.merge(field.second.cache_disk_io_stats());
     }
-    indexMetrics.disk_io.update(disk_io);
+    indexMetrics.disk_io.update(disk_io, "index");
 }
 
 struct TempAttributeMetric

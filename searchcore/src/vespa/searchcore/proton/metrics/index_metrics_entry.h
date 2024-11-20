@@ -17,7 +17,7 @@ class IndexMetricsEntry : public FieldMetricsEntry {
 public:
     explicit IndexMetricsEntry(const std::string& field_name);
     ~IndexMetricsEntry() override;
-    void update_disk_io(const search::CacheDiskIoStats& cache_disk_io_stats) { _disk_io.update(cache_disk_io_stats); }
+    void update_disk_io(const search::CacheDiskIoStats& cache_disk_io_stats, const std::string& label) { _disk_io.update(cache_disk_io_stats, label); }
 };
 
 } // namespace proton

@@ -20,7 +20,7 @@ class DiskIoMetrics : public metrics::MetricSet {
     public:
         explicit SearchMetrics(metrics::MetricSet* parent);
         ~SearchMetrics() override;
-        void update(const search::CacheDiskIoStats& cache_disk_io_stats);
+        void update(const search::CacheDiskIoStats& cache_disk_io_stats, const std::string& label);
     };
 
     SearchMetrics _search;
@@ -28,7 +28,7 @@ class DiskIoMetrics : public metrics::MetricSet {
 public:
     explicit DiskIoMetrics(metrics::MetricSet* parent);
     ~DiskIoMetrics() override;
-    void update(const search::CacheDiskIoStats& cache_disk_io_stats) { _search.update(cache_disk_io_stats); }
+    void update(const search::CacheDiskIoStats& cache_disk_io_stats, const std::string& label) { _search.update(cache_disk_io_stats, label); }
 };
 
 }

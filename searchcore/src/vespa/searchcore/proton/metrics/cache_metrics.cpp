@@ -56,6 +56,9 @@ CacheMetrics::update_metrics(const CacheStats& current, const CacheStats& last)
     memoryUsage.set(current.memory_used);
     elements.set(current.elements);
     update_hit_rate(current, last);
+    LOG(info, "Debug update metrics cache %s lookups: current=%zd, last=%zd, delta=%zd",
+        _cache_name.c_str(),
+        current.lookups(), last.lookups(), current.lookups() - last.lookups());
     update_count_metric(current.lookups(), last.lookups(), lookups);
     update_count_metric(current.invalidations, last.invalidations, invalidations);
 }
